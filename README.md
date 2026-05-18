@@ -31,13 +31,13 @@ Modern cloud infrastructure management dashboard built with **React**, **FastAPI
 
 ## Main Dashboard
 
-<img width="100%" alt="dashboard" src="https://raw.githubusercontent.com/teiusoa-web/cloud-infra-manager/.github/assets/dashboard.png">
+<img width="100%" alt="dashboard" src=".github/assets/dashboard.png">
 
 ---
 
 ## Pulumi Infrastructure
 
-<img width="100%" alt="pulumi" src="https://raw.githubusercontent.com/teiusoa-web/cloud-infra-manager/.github/assets/pulumi.png">
+<img width="100%" alt="pulumi" src=".github/assets/pulumi.png">
 
 ---
 
