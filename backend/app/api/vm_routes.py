@@ -3,10 +3,10 @@ from fastapi import APIRouter, Body
 from app.services.gcp_vm_service import (
     list_vms,
     create_vm,
+    delete_vm,
     start_vm,
     stop_vm,
     reset_vm,
-    delete_vm,
 )
 
 router = APIRouter(
@@ -22,10 +22,16 @@ def get_vms():
 
 @router.post("/create")
 def create(data: dict = Body(...)):
-    return create_vm(
-        data["name"],
-        data["zone"]
-    )
+    vm_name = data.get("name")
+    zone = data.get("zone")
+
+    if not vm_name:
+        return {
+            "success": False,
+            "message": "VM name is required"
+        }
+
+    return create_vm(vm_name, zone)
 
 
 @router.post("/{zone}/{vm_name}/start")

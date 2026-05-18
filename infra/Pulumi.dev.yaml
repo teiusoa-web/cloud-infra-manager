@@ -1,2 +1,4 @@
 config:
   gcp:project: pulumi-cloud-project
+  gcp:region: asia-southeast1
+  gcp:zone: asia-southeast1-a
