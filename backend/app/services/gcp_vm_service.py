@@ -1,5 +1,5 @@
-import subprocess
 import json
+import subprocess
 
 PROJECT_ID = "pulumi-cloud-project"
 
@@ -15,6 +15,7 @@ def run_gcloud_command(command):
         )
 
         return {
+            "success": result.returncode == 0,
             "stdout": result.stdout,
             "stderr": result.stderr,
             "returncode": result.returncode
@@ -22,6 +23,7 @@ def run_gcloud_command(command):
 
     except Exception as e:
         return {
+            "success": False,
             "error": str(e)
         }
 
@@ -39,10 +41,11 @@ def list_vms():
 
     result = run_gcloud_command(command)
 
-    if result["returncode"] == 0:
+    if result["success"]:
         result["data"] = json.loads(result["stdout"])
 
     return result
+
 
 def create_vm(vm_name, zone):
     command = [
@@ -93,6 +96,7 @@ def stop_vm(vm_name, zone):
 
     return run_gcloud_command(command)
 
+
 def reset_vm(vm_name, zone):
     command = [
         GCLOUD,
@@ -107,6 +111,7 @@ def reset_vm(vm_name, zone):
     ]
 
     return run_gcloud_command(command)
+
 
 def delete_vm(vm_name, zone):
     command = [

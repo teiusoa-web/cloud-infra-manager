@@ -5,18 +5,17 @@ const API_URL = "http://127.0.0.1:8000";
 function App() {
   const [vms, setVMs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [newVmName, setNewVmName] = useState("");
+  const [newVmZone, setNewVmZone] = useState("asia-southeast1-b");
 
   const loadVMs = async () => {
     setLoading(true);
 
     try {
       const response = await fetch(`${API_URL}/vms/`);
-      const data = await response.json();
+      const result = await response.json();
 
-      const parsed = JSON.parse(data.stdout || "[]");
-
-      setVMs(parsed);
-
+      setVMs(result.data || []);
     } catch (error) {
       console.error(error);
     }
@@ -24,24 +23,59 @@ function App() {
     setLoading(false);
   };
 
+  const createVM = async () => {
+    if (!newVmName) {
+      alert("Nhập tên VM trước");
+      return;
+    }
+
+    await fetch(`${API_URL}/vms/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: newVmName,
+        zone: newVmZone,
+      }),
+    });
+
+    setNewVmName("");
+    loadVMs();
+  };
+
   const startVM = async (zone, name) => {
-    await fetch(
-      `${API_URL}/vms/${zone}/${name}/start`,
-      {
-        method: "POST"
-      }
-    );
+    await fetch(`${API_URL}/vms/${zone}/${name}/start`, {
+      method: "POST",
+    });
 
     loadVMs();
   };
 
   const stopVM = async (zone, name) => {
-    await fetch(
-      `${API_URL}/vms/${zone}/${name}/stop`,
-      {
-        method: "POST"
-      }
-    );
+    await fetch(`${API_URL}/vms/${zone}/${name}/stop`, {
+      method: "POST",
+    });
+
+    loadVMs();
+  };
+
+  const resetVM = async (zone, name) => {
+    await fetch(`${API_URL}/vms/${zone}/${name}/reset`, {
+      method: "POST",
+    });
+
+    loadVMs();
+  };
+
+  const deleteVM = async (zone, name) => {
+    const confirmDelete = confirm(`Xoá VM ${name}?`);
+
+    if (!confirmDelete) return;
+
+    await fetch(`${API_URL}/vms/${zone}/${name}`, {
+      method: "DELETE",
+    });
 
     loadVMs();
   };
@@ -51,92 +85,142 @@ function App() {
   }, []);
 
   return (
-    <div style={{ padding: 30, fontFamily: "Arial" }}>
-      <h1>Cloud Infra Manager</h1>
+    <div className="container mt-5">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1>☁ Cloud Infra Manager</h1>
+          <p className="text-muted">
+            Quản lý VM Google Cloud bằng FastAPI, React và Pulumi
+          </p>
+        </div>
 
-      <button onClick={loadVMs}>
-        {loading ? "Loading..." : "Refresh"}
-      </button>
+        <button className="btn btn-primary" onClick={loadVMs}>
+          {loading ? "Loading..." : "Refresh"}
+        </button>
+      </div>
 
-      <table
-        border="1"
-        cellPadding="10"
-        style={{
-          marginTop: 20,
-          borderCollapse: "collapse"
-        }}
-      >
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Zone</th>
-            <th>Status</th>
-            <th>Machine Type</th>
-            <th>Internal IP</th>
-            <th>External IP</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      <div className="card shadow mb-4">
+        <div className="card-body">
+          <h5>Create VM</h5>
 
-        <tbody>
-          {vms.map((vm) => {
+          <div className="row g-2">
+            <div className="col-md-5">
+              <input
+                className="form-control"
+                placeholder="VM name, ví dụ: vm-demo"
+                value={newVmName}
+                onChange={(e) => setNewVmName(e.target.value)}
+              />
+            </div>
 
-            const zone =
-              vm.zone?.split("/").pop();
+            <div className="col-md-4">
+              <select
+                className="form-select"
+                value={newVmZone}
+                onChange={(e) => setNewVmZone(e.target.value)}
+              >
+                <option value="asia-southeast1-a">asia-southeast1-a</option>
+                <option value="asia-southeast1-b">asia-southeast1-b</option>
+                <option value="asia-southeast1-c">asia-southeast1-c</option>
+                <option value="us-central1-a">us-central1-a</option>
+              </select>
+            </div>
 
-            const machineType =
-              vm.machineType?.split("/").pop();
+            <div className="col-md-3">
+              <button className="btn btn-success w-100" onClick={createVM}>
+                Create VM
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            return (
-              <tr key={vm.id}>
-                <td>{vm.name}</td>
+      <div className="card shadow">
+        <div className="card-body">
+          <h5>VM List</h5>
 
-                <td>{zone}</td>
-
-                <td>{vm.status}</td>
-
-                <td>{machineType}</td>
-
-                <td>
-                  {
-                    vm.networkInterfaces?.[0]
-                      ?.networkIP || "-"
-                  }
-                </td>
-
-                <td>
-                  {
-                    vm.networkInterfaces?.[0]
-                      ?.accessConfigs?.[0]
-                      ?.natIP || "-"
-                  }
-                </td>
-
-                <td>
-                  <button
-                    onClick={() =>
-                      startVM(zone, vm.name)
-                    }
-                  >
-                    Start
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      stopVM(zone, vm.name)
-                    }
-                    style={{
-                      marginLeft: 10
-                    }}
-                  >
-                    Stop
-                  </button>
-                </td>
+          <table className="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Zone</th>
+                <th>Status</th>
+                <th>Machine Type</th>
+                <th>Internal IP</th>
+                <th>External IP</th>
+                <th>Actions</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+
+            <tbody>
+              {vms.map((vm) => {
+                const zone = vm.zone?.split("/").pop();
+                const machineType = vm.machineType?.split("/").pop();
+                const internalIP =
+                  vm.networkInterfaces?.[0]?.networkIP || "-";
+                const externalIP =
+                  vm.networkInterfaces?.[0]?.accessConfigs?.[0]?.natIP || "-";
+
+                return (
+                  <tr key={vm.id}>
+                    <td>{vm.name}</td>
+                    <td>{zone}</td>
+                    <td>
+                      {vm.status === "RUNNING" ? (
+                        <span className="badge bg-success">RUNNING</span>
+                      ) : (
+                        <span className="badge bg-secondary">
+                          {vm.status}
+                        </span>
+                      )}
+                    </td>
+                    <td>{machineType}</td>
+                    <td>{internalIP}</td>
+                    <td>{externalIP}</td>
+                    <td>
+                      <button
+                        className="btn btn-success btn-sm"
+                        onClick={() => startVM(zone, vm.name)}
+                      >
+                        Start
+                      </button>
+
+                      <button
+                        className="btn btn-warning btn-sm ms-2"
+                        onClick={() => stopVM(zone, vm.name)}
+                      >
+                        Stop
+                      </button>
+
+                      <button
+                        className="btn btn-info btn-sm ms-2"
+                        onClick={() => resetVM(zone, vm.name)}
+                      >
+                        Reset
+                      </button>
+
+                      <button
+                        className="btn btn-danger btn-sm ms-2"
+                        onClick={() => deleteVM(zone, vm.name)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {vms.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center text-muted">
+                    Không có VM nào
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

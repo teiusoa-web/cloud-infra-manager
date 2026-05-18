@@ -2,11 +2,11 @@ from fastapi import APIRouter, Body
 
 from app.services.gcp_vm_service import (
     list_vms,
+    create_vm,
     start_vm,
     stop_vm,
-    create_vm,
+    reset_vm,
     delete_vm,
-    reset_vm
 )
 
 router = APIRouter(
