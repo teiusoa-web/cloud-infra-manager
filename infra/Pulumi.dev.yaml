@@ -2,3 +2,5 @@ config:
   gcp:project: pulumi-cloud-project
   gcp:region: asia-southeast1
   gcp:zone: asia-southeast1-a
+  python:virtualenv: ""
+encryptionsalt: v1:N7VaYYOcka0=:v1:MkMnmV6LeFbgzhoH:gleUTm2cfidXGc4Bwa/Fl6ghIxdemA==

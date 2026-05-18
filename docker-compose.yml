@@ -9,7 +9,10 @@ services:
       - ./backend/.env
     volumes:
       - ./infra:/infra
+      - ~/.config/gcloud:/root/.config/gcloud
     restart: unless-stopped
+    environment:
+      - PULUMI_CONFIG_PASSPHRASE=123456
 
   frontend:
     build:
