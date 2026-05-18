@@ -1,0 +1,11 @@
+name: cloud-infra-manager
+description: Cloud Infrastructure Management using Pulumi and GCP
+runtime:
+  name: python
+  options:
+    toolchain: pip
+    virtualenv: venv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: gcp-python

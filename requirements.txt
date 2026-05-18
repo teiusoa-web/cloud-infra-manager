@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+pulumi
+google-cloud-compute
+python-dotenv
