@@ -1,75 +1,84 @@
+import os
 import subprocess
 from pathlib import Path
-import os
+
+from app.core.config import (
+    PROJECT_ID,
+    DEFAULT_ZONE,
+    PULUMI_STACK,
+    PULUMI_CONFIG_PASSPHRASE,
+)
 
 INFRA_DIR = Path(__file__).resolve().parents[3] / "infra"
 
 
 def run_pulumi_cmd(command: list[str]):
+    env = os.environ.copy()
+    env["PULUMI_CONFIG_PASSPHRASE"] = PULUMI_CONFIG_PASSPHRASE
+
     try:
-        # Pulumi local backend
+        subprocess.run(
+            ["mkdir", "-p", "/tmp/pulumi"],
+            capture_output=True,
+            text=True,
+        )
+
         subprocess.run(
             ["pulumi", "login", "file:///tmp/pulumi"],
             cwd=INFRA_DIR,
             capture_output=True,
             text=True,
+            env=env,
         )
 
-        # Set passphrase
-        env = os.environ.copy()
-        env["PULUMI_CONFIG_PASSPHRASE"] = "1234"
-
-        # Kiểm tra stack
-        stack_check = subprocess.run(
-            ["pulumi", "stack", "select", "dev"],
+        stack_select = subprocess.run(
+            ["pulumi", "stack", "select", PULUMI_STACK],
             cwd=INFRA_DIR,
             capture_output=True,
             text=True,
-            env=env
+            env=env,
         )
 
-        # Nếu chưa có stack thì tạo
-        if stack_check.returncode != 0:
+        if stack_select.returncode != 0:
             subprocess.run(
-                ["pulumi", "stack", "init", "dev"],
+                ["pulumi", "stack", "init", PULUMI_STACK],
                 cwd=INFRA_DIR,
                 capture_output=True,
                 text=True,
-                env=env
+                env=env,
             )
 
-            subprocess.run(
-                ["pulumi", "config", "set", "gcp:project", "pulumi-cloud-project"],
-                cwd=INFRA_DIR,
-                capture_output=True,
-                text=True,
-                env=env
-            )
+        subprocess.run(
+            ["pulumi", "config", "set", "gcp:project", PROJECT_ID],
+            cwd=INFRA_DIR,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
 
-            subprocess.run(
-                ["pulumi", "config", "set", "gcp:region", "asia-southeast1"],
-                cwd=INFRA_DIR,
-                capture_output=True,
-                text=True,
-                env=env
-            )
+        subprocess.run(
+            ["pulumi", "config", "set", "gcp:region", "asia-southeast1"],
+            cwd=INFRA_DIR,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
 
-            subprocess.run(
-                ["pulumi", "config", "set", "gcp:zone", "asia-southeast1-a"],
-                cwd=INFRA_DIR,
-                capture_output=True,
-                text=True,
-                env=env
-            )
+        subprocess.run(
+            ["pulumi", "config", "set", "gcp:zone", DEFAULT_ZONE],
+            cwd=INFRA_DIR,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
 
-        # Run command
         result = subprocess.run(
             command,
             cwd=INFRA_DIR,
             capture_output=True,
             text=True,
             shell=False,
-            env=env
+            env=env,
         )
 
         return {
@@ -78,7 +87,7 @@ def run_pulumi_cmd(command: list[str]):
             "cwd": str(INFRA_DIR),
             "stdout": result.stdout,
             "stderr": result.stderr,
-            "return_code": result.returncode
+            "return_code": result.returncode,
         }
 
     except Exception as e:
@@ -86,7 +95,7 @@ def run_pulumi_cmd(command: list[str]):
             "success": False,
             "command": " ".join(command),
             "cwd": str(INFRA_DIR),
-            "error": str(e)
+            "error": str(e),
         }
 
 
