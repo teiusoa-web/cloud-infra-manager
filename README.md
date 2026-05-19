@@ -1,4 +1,4 @@
-﻿# ☁ Cloud Infra Manager
+# ☁ Cloud Infra Manager
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
@@ -108,7 +108,7 @@ cd cloud-infra-manager
 ## 2. Start Project
 
 ```powershell
-.\start.ps1
+.\fullstart.ps1
 ```
 
 This script will:
