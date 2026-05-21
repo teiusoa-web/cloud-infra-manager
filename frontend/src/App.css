@@ -421,3 +421,22 @@ select {
 .status-dot.TERMINATED {
   background-color: #ef4444;
 }
+
+.provider-tabs {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.provider-tabs button {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: #1f2937;
+  color: white;
+}
+
+.provider-tabs .active-provider {
+  background: #2563eb;
+}
