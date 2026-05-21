@@ -12,7 +12,7 @@ services:
     volumes:
       - ./infra:/infra
       - ./pulumi-state:/tmp/pulumi
-      - C:/Users/Cpeach/AppData/Roaming/gcloud:/root/.config/gcloud
+      - ${GCLOUD_CONFIG}:/root/.config/gcloud
     restart: unless-stopped
 
   frontend:
