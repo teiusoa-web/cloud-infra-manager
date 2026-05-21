@@ -377,3 +377,47 @@ select {
   border-color: transparent;
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
 }
+
+.monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.monitor-card {
+  background: #111827;
+  border-radius: 18px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.25);
+}
+
+.monitor-card h3 {
+  margin-bottom: 14px;
+}
+
+.monitor-card p {
+  margin-bottom: 10px;
+}
+
+.monitor-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+}
+
+.status-dot.RUNNING {
+  background-color: #22c55e;
+}
+
+.status-dot.TERMINATED {
+  background-color: #ef4444;
+}
