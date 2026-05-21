@@ -31,22 +31,63 @@ function App() {
     return machineUrl.split("/").pop();
   };
 
-  const loadVMs = async () => {
-    setLoading(true);
+  const getExternalIP = (vm) => {
+    return vm.networkInterfaces?.[0]?.accessConfigs?.[0]?.natIP || "No IP";
+  };
+
+  const getUptime = (vm) => {
+    if (!vm.creationTimestamp) return "Unknown";
+
+    const created = new Date(vm.creationTimestamp);
+    const now = new Date();
+    const diffMs = now - created;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffDays > 0) return `${diffDays}d ${diffHours % 24}h`;
+    return `${diffHours}h`;
+  };
+
+  const getInternalIP = (vm) => {
+    return vm.networkInterfaces?.[0]?.networkIP || "No Internal IP";
+  };
+
+  const formatTime = (time) => {
+    if (!time) return "Unknown";
+    return new Date(time).toLocaleString();
+  };
+
+  const loadVMs = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
 
     try {
-      const data = await listVMs();
-      const parsed = data.stdout ? JSON.parse(data.stdout) : [];
-      setVms(parsed);
+      const result = await listVMs();
+
+      if (result.success) {
+        if (result.data) {
+          setVms(result.data);
+        } else {
+          const parsed = result.stdout ? JSON.parse(result.stdout) : [];
+          setVms(parsed);
+        }
+      } else {
+        setMessage(result.stderr || result.error || "Không thể tải VM list");
+      }
     } catch {
       setMessage("Không thể tải VM list");
     }
 
-    setLoading(false);
+    if (showLoading) setLoading(false);
   };
 
   useEffect(() => {
-    loadVMs();
+    loadVMs(true);
+
+    const interval = setInterval(() => {
+      loadVMs(false);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleCreate = async () => {
@@ -57,10 +98,7 @@ function App() {
 
     setLoading(true);
 
-    const result = await createVM({
-      name,
-      zone,
-    });
+    const result = await createVM({ name, zone });
 
     setMessage(
       result.success
@@ -76,24 +114,12 @@ function App() {
     setLoading(true);
 
     const vmZone = getZoneName(vm.zone);
-
     let result;
 
-    if (action === "start") {
-      result = await startVM(vmZone, vm.name);
-    }
-
-    if (action === "stop") {
-      result = await stopVM(vmZone, vm.name);
-    }
-
-    if (action === "reset") {
-      result = await resetVM(vmZone, vm.name);
-    }
-
-    if (action === "delete") {
-      result = await deleteVM(vmZone, vm.name);
-    }
+    if (action === "start") result = await startVM(vmZone, vm.name);
+    if (action === "stop") result = await stopVM(vmZone, vm.name);
+    if (action === "reset") result = await resetVM(vmZone, vm.name);
+    if (action === "delete") result = await deleteVM(vmZone, vm.name);
 
     setMessage(
       result.success
@@ -112,21 +138,10 @@ function App() {
 
     let result;
 
-    if (action === "preview") {
-      result = await pulumiPreview();
-    }
-
-    if (action === "up") {
-      result = await pulumiUp();
-    }
-
-    if (action === "destroy") {
-      result = await pulumiDestroy();
-    }
-
-    if (action === "outputs") {
-      result = await pulumiOutputs();
-    }
+    if (action === "preview") result = await pulumiPreview();
+    if (action === "up") result = await pulumiUp();
+    if (action === "destroy") result = await pulumiDestroy();
+    if (action === "outputs") result = await pulumiOutputs();
 
     setMessage(
       result.success
@@ -213,7 +228,8 @@ function App() {
               <button
                 key={item}
                 type="button"
-                className={`zone-pill ${zone === item ? "active-zone-pill" : ""}`}
+                className={`zone-pill ${zone === item ? "active-zone-pill" : ""
+                  }`}
                 onClick={() => setZone(item)}
               >
                 {item}
@@ -270,11 +286,7 @@ function App() {
           </div>
         )}
 
-        {infraLog && (
-          <pre className="console-box">
-            {infraLog}
-          </pre>
-        )}
+        {infraLog && <pre className="console-box">{infraLog}</pre>}
       </section>
 
       <section className="panel">
@@ -291,6 +303,8 @@ function App() {
                 <th>Zone</th>
                 <th>Status</th>
                 <th>Machine Type</th>
+                <th>External IP</th>
+                <th>Uptime</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -298,7 +312,7 @@ function App() {
             <tbody>
               {vms.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="empty-row">
+                  <td colSpan="7" className="empty-row">
                     Chưa có VM nào
                   </td>
                 </tr>
@@ -309,16 +323,14 @@ function App() {
                     <td>{getZoneName(vm.zone)}</td>
 
                     <td>
-                      <span
-                        className={`status-badge ${vm.status}`}
-                      >
+                      <span className={`status-badge ${vm.status}`}>
                         {vm.status}
                       </span>
                     </td>
 
-                    <td>
-                      {getMachineTypeName(vm.machineType)}
-                    </td>
+                    <td>{getMachineTypeName(vm.machineType)}</td>
+                    <td>{getExternalIP(vm)}</td>
+                    <td>{getUptime(vm)}</td>
 
                     <td>
                       <div className="vm-action-wrapper">
@@ -326,7 +338,7 @@ function App() {
                           <button
                             className="action-btn start-btn"
                             onClick={() => handleAction("start", vm)}
-                            disabled={loading}
+                            disabled={loading || vm.status === "RUNNING"}
                           >
                             ▶ Start
                           </button>
@@ -334,7 +346,7 @@ function App() {
                           <button
                             className="action-btn stop-btn"
                             onClick={() => handleAction("stop", vm)}
-                            disabled={loading}
+                            disabled={loading || vm.status !== "RUNNING"}
                           >
                             ■ Stop
                           </button>
@@ -342,7 +354,7 @@ function App() {
                           <button
                             className="action-btn reset-btn"
                             onClick={() => handleAction("reset", vm)}
-                            disabled={loading}
+                            disabled={loading || vm.status !== "RUNNING"}
                           >
                             ↻ Reset
                           </button>
@@ -370,6 +382,40 @@ function App() {
           </table>
         </div>
       </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <h2>Monitoring Dashboard</h2>
+          <p>Realtime Google Cloud VM Monitoring</p>
+        </div>
+
+        <div className="monitor-grid">
+          {vms.length === 0 ? (
+            <p className="empty-row">Chưa có VM nào để monitoring</p>
+          ) : (
+            vms.map((vm) => (
+              <div className="monitor-card" key={vm.id || vm.name}>
+                <h3>{vm.name}</h3>
+
+                <p>
+                  Status:{" "}
+                  <span className={`status-badge ${vm.status}`}>
+                    {vm.status}
+                  </span>
+                </p>
+
+                <p>Zone: {getZoneName(vm.zone)}</p>
+                <p>Machine: {getMachineTypeName(vm.machineType)}</  p>
+                <p>External IP: {getExternalIP(vm)}</p>
+                <p>Internal IP: {getInternalIP(vm)}</p>
+                <p>Uptime: {getUptime(vm)}</p>
+                <p>Created: {formatTime(vm.creationTimestamp)}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
     </div>
   );
 }
