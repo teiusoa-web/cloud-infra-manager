@@ -4,7 +4,7 @@ Write-Host "======================================="
 
 if (!(Test-Path "backend/.env")) {
 @"
-PROJECT_ID=your-gcp-project-id
+PROJECT_ID=pulumi-cloud-project
 DEFAULT_ZONE=asia-southeast1-a
 GCLOUD_PATH=gcloud
 PULUMI_STACK=dev
