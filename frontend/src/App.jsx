@@ -35,6 +35,8 @@ function App() {
     return vm.networkInterfaces?.[0]?.accessConfigs?.[0]?.natIP || "No IP";
   };
 
+  const [provider, setProvider] = useState("gcp");
+
   const getUptime = (vm) => {
     if (!vm.creationTimestamp) return "Unknown";
 
@@ -178,6 +180,18 @@ function App() {
           Refresh
         </button>
       </nav>
+
+      <div className="provider-tabs">
+        {["gcp", "aws", "azure"].map((item) => (
+          <button
+            key={item}
+            className={provider === item ? "active-provider" : ""}
+            onClick={() => setProvider(item)}
+          >
+            {item.toUpperCase()}
+          </button>
+        ))}
+      </div>
 
       <div className="dashboard-grid">
         <div className="stat-card">
@@ -388,6 +402,24 @@ function App() {
           <h2>Monitoring Dashboard</h2>
           <p>Realtime Google Cloud VM Monitoring</p>
         </div>
+
+        {provider !== "gcp" ? (
+          <section className="panel">
+            <div className="panel-header">
+              <h2>{provider.toUpperCase()} Support</h2>
+              <p>This provider is in demo mode.</p>
+            </div>
+
+            <p>
+              Multi-cloud architecture is ready. Real AWS/Azure integration can be added
+              with boto3 or Azure SDK.
+            </p>
+          </section>
+        ) : (
+          <>
+            {/* Monitoring Dashboard + VM List GCP hiện tại */}
+          </>
+        )}
 
         <div className="monitor-grid">
           {vms.length === 0 ? (
